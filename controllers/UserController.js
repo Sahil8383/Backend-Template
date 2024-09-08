@@ -2,7 +2,6 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const bycrypt = require('bcrypt');
 
-
 const authMiddleware = (req, res, next) => {
 
     const token = req.header('authorization');
@@ -38,9 +37,11 @@ const SignUp = async (req, res) => {
         });
 
         const user = await newUser.save();
-        res.status(201).json(user);
+        res.status(201);
+        res.json(user);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500);
+        res.json({ error: error.message });
     }
 }
 
