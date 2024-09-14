@@ -1,11 +1,12 @@
 const bcrypt = require('bcrypt'); 
 const jwt = require('jsonwebtoken');
-const { LoginIn } = require('../../controllers/UserController');
+const { LoginIn, SignUp } = require('../../controllers/UserController');
 const User = require('../../models/User'); 
 
 jest.mock('../../models/User'); 
 jest.mock('bcrypt'); 
 jest.mock('jsonwebtoken'); 
+
 const req = {
     body: {
         email: 'test@example.com',
@@ -94,3 +95,52 @@ describe('LoginIn function', () => {
         expect(res.json).toHaveBeenCalledWith({ error: 'Server error' });
     });
 });
+
+const reqSignup = {
+    body: {
+        name:'Sahil',
+        email: 'test@example.com',
+        password: '1234'
+    }
+}
+
+const resSignup = {
+    status: jest.fn().mockReturnThis(),
+    json: jest.fn()
+}
+
+describe('Sign Up user', () => {
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
+
+    it('it should return 200 when user created', async () => {
+        const mockUser = {
+            name:'Sahil',
+            email: 'test@example.com',
+            password: '1234'
+        }
+
+        bcrypt.genSalt = jest.fn().mockResolvedValue('mock_salt');
+        bcrypt.hash = jest.fn().mockResolvedValue('hashed_password');
+
+        User.prototype.save = jest.fn().mockResolvedValue(mockUser);
+
+        await SignUp(reqSignup,resSignup);
+
+        expect(bcrypt.genSalt).toHaveBeenCalledWith();  // Check that genSalt is called
+        expect(bcrypt.hash).toHaveBeenCalledWith('1234', 'mock_salt');  // Ensure bcrypt hashes password correctly
+
+        expect(resSignup.status).toHaveBeenCalledWith(201);  // Check if status 201 is set
+        expect(resSignup.json).toHaveBeenCalledWith(mockUser);
+    })
+
+    it('server error', async () => {
+        User.prototype.save = jest.fn().mockRejectedValue(new Error('Server error'));
+
+        await SignUp(reqSignup,resSignup);
+
+        expect(resSignup.status).toHaveBeenCalledWith(500);
+        expect(resSignup.json).toHaveBeenCalledWith({error:'Server error'})
+    })
+})
